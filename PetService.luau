@@ -107,22 +107,22 @@ function Pet.Update(self: Pet, targetCFrame: CFrame, alpha: number): ()
 	local newPosition: Vector3
 	local newRotation: CFrame
 	local currentCFrame: CFrame = self.currentCFrame
-	local offsetToTarget = targetCFrame.Position - currentCFrame.Position
+	local offsetToTarget: Vector3 = targetCFrame.Position - currentCFrame.Position
 	if offsetToTarget.Magnitude > TELEPORT_DISTANCE then
 		newPosition = targetCFrame.Position
 		newRotation = currentCFrame.Rotation
 	else
 		newPosition = currentCFrame.Position:Lerp(targetCFrame.Position, alpha)
-		local movement = newPosition - currentCFrame.Position
+		local movement: Vector3 = newPosition - currentCFrame.Position
 		movement = Vector3.new(movement.X, 0, movement.Z)
 		if movement.Magnitude > MIN_MOVE_DISTANCE then
-			local targetRotation = CFrame.lookAt(currentCFrame.Position, currentCFrame.Position + movement).Rotation
+			local targetRotation: CFrame = CFrame.lookAt(currentCFrame.Position, currentCFrame.Position + movement).Rotation
 			newRotation = currentCFrame.Rotation:Lerp(targetRotation, alpha) 
 		else
 			newRotation = currentCFrame.Rotation
 		end
 	end
-	local goalCFrame = CFrame.new(newPosition) * newRotation
+	local goalCFrame: CFrame = CFrame.new(newPosition) * newRotation
 	self.petModel:PivotTo(goalCFrame)
 	self.currentCFrame = goalCFrame
 end
@@ -146,12 +146,12 @@ end
 function Pet.TryDamage(self: Pet, delta: number): ()
 	if self.petState ~= "Attacking" then return end
 	if self.target == nil or self.target.Parent == nil then return end
-	local offset = self.target:GetPivot().Position - self.currentCFrame.Position
+	local offset: Vector3 = self.target:GetPivot().Position - self.currentCFrame.Position
 	if offset.Magnitude > ATTACK_DISTANCE + ATTACK_RANGE_TOLERANCE then return end
 	self.damageTimer += delta
 	if self.damageTimer > DAMAGE_INTERVAL then
 		self.damageTimer -= DAMAGE_INTERVAL
-		local takeDamage = self.target:FindFirstChild("TakeDamage")
+		local takeDamage: Instance? = self.target:FindFirstChild("TakeDamage")
 		if takeDamage == nil or not takeDamage:IsA("BindableEvent") then return end
 		takeDamage:Fire(self.owner, ATTACK_DAMAGE)
 	end
@@ -159,7 +159,7 @@ end
 
 local function getRoot(player: Player): BasePart?
 	if player.Character == nil then return nil end
-	local root = player.Character:FindFirstChild("HumanoidRootPart")
+	local root: Instance? = player.Character:FindFirstChild("HumanoidRootPart")
 	if root == nil or not root:IsA("BasePart") then return nil end
 	return root
 end
@@ -171,11 +171,11 @@ local function isPlayerInZone(player: Player): boolean
 	-- Converts the player's position into DetectArea's local coordinate space,
 	-- then compares each axis' distance with half of the corresponding area size.
 	-- If all three axes X, Y, and Z are within their respective ranges, the player is considered to be inside the area.
-	local playerLocalPoint = DetectArea.CFrame:PointToObjectSpace(root.Position)
-	local playerX = math.abs(playerLocalPoint.X)
-	local playerY = math.abs(playerLocalPoint.Y)
-	local playerZ = math.abs(playerLocalPoint.Z)
-	local halfSize = DetectArea.Size / 2
+	local playerLocalPoint: Vector3 = DetectArea.CFrame:PointToObjectSpace(root.Position)
+	local playerX: number = math.abs(playerLocalPoint.X)
+	local playerY: number = math.abs(playerLocalPoint.Y)
+	local playerZ: number = math.abs(playerLocalPoint.Z)
+	local halfSize: Vector3 = DetectArea.Size / 2
 	if playerX < halfSize.X and playerY < halfSize.Y and playerZ < halfSize.Z then
 		return true
 	end
@@ -183,10 +183,10 @@ local function isPlayerInZone(player: Player): boolean
 end
 
 local function findTarget(): Model?
-	local breakables = Breakables:GetChildren()
+	local breakables: {Instance} = Breakables:GetChildren()
 	if #breakables == 0 then return nil end
-	local randNum = math.random(1, #breakables)
-	local randBreakable = breakables[randNum]
+	local randNum: number = math.random(1, #breakables)
+	local randBreakable: Instance = breakables[randNum]
 	if not randBreakable:IsA("Model") then return nil end
 	return randBreakable
 end
@@ -200,9 +200,9 @@ end
 
 local function getAttackCFrame(pet: Pet): CFrame?
 	if pet.target == nil or pet.target.Parent == nil then return nil end
-	local targetPosition = pet.target:GetPivot().Position
-	local offset = pet.currentCFrame.Position - targetPosition
-	local attackPosition = Vector3.xAxis
+	local targetPosition: Vector3 = pet.target:GetPivot().Position
+	local offset: Vector3 = pet.currentCFrame.Position - targetPosition
+	local attackPosition: Vector3 = Vector3.xAxis
 	
 	-- When the pet overlaps with the breakable, the offset's magnitude becomes close to 0,
 	-- making it impossible to obtain a valid unit vector.
@@ -210,7 +210,7 @@ local function getAttackCFrame(pet: Pet): CFrame?
 	if offset.Magnitude >= MIN_DIRECTION_LENGTH then
 		attackPosition = offset.Unit
 	end
-	local attackCFrame = CFrame.new(targetPosition + attackPosition * ATTACK_DISTANCE)
+	local attackCFrame: CFrame = CFrame.new(targetPosition + attackPosition * ATTACK_DISTANCE)
 	return attackCFrame
 end
 
@@ -219,7 +219,7 @@ local function updateAttackTriggers(): ()
 		if not isPlayerInZone(player) then continue end
 		for _, pet in pairs(equippedPets[player]) do
 			if pet.petState ~= "Following" then continue end
-			local newTarget = findTarget()
+			local newTarget: Model? = findTarget()
 			if newTarget == nil then continue end
 			pet:StartAttack(newTarget)
 		end
@@ -227,7 +227,7 @@ local function updateAttackTriggers(): ()
 end
 
 local function updatePlayerPets(player: Player, delta: number): ()
-	local root = getRoot(player)
+	local root: BasePart? = getRoot(player)
 	if root == nil then return end
 	if equippedPets[player] == nil then return end
 	
@@ -246,7 +246,7 @@ local function updatePlayerPets(player: Player, delta: number): ()
 	
 	for index, petId in ipairs(petIds) do
 		local targetCFrame: CFrame? = nil
-		local pet = equippedPets[player][petId]
+		local pet: Pet = equippedPets[player][petId]
 		if pet.petState == "Following" then
 			local formationOffset: CFrame = getFormationOffset(index, totalPets)
 			
@@ -258,7 +258,7 @@ local function updatePlayerPets(player: Player, delta: number): ()
 			
 			targetCFrame = root.CFrame * formationOffset * CFrame.new(0, bobOffset, 0)
 		elseif pet.petState == "Attacking" then
-			local attackCFrame = getAttackCFrame(pet)
+			local attackCFrame: CFrame? = getAttackCFrame(pet)
 			if attackCFrame ~= nil then
 				targetCFrame = attackCFrame
 			else
@@ -298,7 +298,7 @@ end
 
 function PetService.Unequip(player: Player, petId: number): boolean
 	if equippedPets[player] == nil then return false end
-	local pet: Pet = equippedPets[player][petId]
+	local pet: Pet? = equippedPets[player][petId]
 	if pet == nil then return false end
 	pet:Destroy()
 	equippedPets[player][petId] = nil
